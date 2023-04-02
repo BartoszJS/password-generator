@@ -1,41 +1,42 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { AiFillEyeInvisible, AiFillEye } from "react-icons/ai";
 
 interface Props {
   password: string;
   onSuccess: () => void;
+  onFail: () => void;
 }
 
-const PasswordInput = ({ password, onSuccess }: Props) => {
-  const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [showModal, setShowModal] = useState<boolean>(false);
+const PasswordInput = ({ password, onSuccess, onFail }: Props) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState("");
   const [activeInputs, setActiveInputs] = useState<number[]>([]);
   const [inputValues, setInputValues] = useState<string[]>(
     Array(password.length).fill("")
   );
-  const [passwordLength, setPasswordLength] = useState<number>(0);
 
-  const url = `https://passwordinator.onrender.com/?len=${passwordLength}`;
+  const url = `https://passwordinator.onrender.com/?len=${password.length}`;
 
-  const fetchAPI = () => {
+  const fetchPassword = () => {
     fetch(url)
       .then((response) => response.json())
-      .then((data) => {
+      .then((data: { data: string }) => {
         setGeneratedPassword(data.data);
         console.log(data.data);
+      })
+      .catch((error) => {
+        console.error(error);
       });
   };
 
   useEffect(() => {
-    setPasswordLength(password.length);
     setInputValues(Array(password.length).fill(""));
-    let min = 2;
-    let max = password.length / 2;
-    let range = max - min;
+
+    const min = 2;
+    const max = password.length / 2;
+    const range = max - min;
     const numActiveInputs = Math.floor(Math.random() * range + min);
-    // const numActiveInputs = Math.max(Math.floor(password.length / 2), 2);
 
     const newActiveInputs: number[] = [];
     while (newActiveInputs.length < numActiveInputs) {
@@ -44,71 +45,59 @@ const PasswordInput = ({ password, onSuccess }: Props) => {
         newActiveInputs.push(randInput);
       }
     }
-    const sortedNumbers = newActiveInputs.slice().sort((a, b) => a - b);
+    //const sortedNumbers = newActiveInputs.slice().sort((a, b) => a - b);
+    const sortedNumbers = [...newActiveInputs].sort();
 
     setActiveInputs(sortedNumbers);
   }, [password]);
 
   useEffect(() => {
-    if (passwordLength != 0) {
-      fetchAPI();
-    }
-  }, [passwordLength]);
+    return () => fetchPassword();
+  }, []);
 
   const handleInputChange = (index: number, value: string) => {
     const newInputValues = [...inputValues];
     newInputValues[index] = value;
     setInputValues(newInputValues);
 
-    if (value && activeInputs.includes(index)) {
-      const nextInputIndex = activeInputs.indexOf(index) + 1;
-      if (nextInputIndex < activeInputs.length) {
-        const nextInput = activeInputs[nextInputIndex];
-        const nextInputElement = document.getElementById(`${nextInput}`);
-        nextInputElement?.focus();
-      }
-    } else if (!value && activeInputs.includes(index)) {
-      const prevInputIndex = activeInputs.indexOf(index) - 1;
-      if (prevInputIndex >= 0) {
-        const prevInput = activeInputs[prevInputIndex];
-        const prevInputElement = document.getElementById(`${prevInput}`);
-        prevInputElement?.focus();
+    if (activeInputs.includes(index)) {
+      if (value) {
+        const nextInputIndex = activeInputs.indexOf(index) + 1;
+        if (nextInputIndex < activeInputs.length) {
+          const nextInput = activeInputs[nextInputIndex];
+          const nextInputElement = document.getElementById(`${nextInput}`);
+          nextInputElement?.focus();
+        }
+      } else if (!value) {
+        const prevInputIndex = activeInputs.indexOf(index) - 1;
+        if (prevInputIndex >= 0) {
+          const prevInput = activeInputs[prevInputIndex];
+          const prevInputElement = document.getElementById(`${prevInput}`);
+          prevInputElement?.focus();
+        }
       }
     }
   };
 
   const handleSubmit = () => {
     const enteredPassword = inputValues.join("");
-    let flag = 0;
+    let flag = false;
     for (let i = 0; i < activeInputs.length; i++) {
       if (generatedPassword[activeInputs[i]] === enteredPassword[i]) {
-        flag = 1;
+        flag = true;
       } else {
-        flag = 0;
+        flag = false;
       }
     }
-    if (flag === 1) {
+    if (flag === true) {
       onSuccess();
     } else {
-      setShowModal(true);
+      onFail();
     }
   };
 
   return (
     <>
-      {showModal && (
-        <div className='absolute w-full h-full z-10 bg-black/40 flex justify-center items-center'>
-          <div className='w-[300px] h-[100px] text-xl bg-white text-red-500 rounded flex flex-col justify-center items-center'>
-            Nieprawidłowe hasło
-            <button
-              className='bg-gray-500 rounded mt-1 text-white text-l py-1 cursor-pointer px-2'
-              onClick={() => setShowModal(!showModal)}
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      )}
       <div className='w-full h-[100vh] flex justify-center items-center border'>
         <div>
           <div className='flex flex-wrap justify-center items-center'>

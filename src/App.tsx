@@ -1,29 +1,37 @@
 import React, { useState } from "react";
 import PasswordInput from "./components/PasswordInput";
 import "./index.css";
+import Modal from "./components/Modal";
 
 const App: React.FC = () => {
-  const [showModal, setShowModal] = useState<boolean>(false);
+  const [showModal, setShowModal] = useState(false);
+  const [showFail, setShowFail] = useState(false);
   const handleSuccess = () => {
     setShowModal(true);
+  };
+  const handleFail = () => {
+    setShowFail(true);
   };
 
   return (
     <div className='App'>
-      {showModal && (
-        <div className='absolute w-full h-full z-10 bg-black/40 flex justify-center items-center'>
-          <div className='w-[300px] h-[100px] text-xl bg-white rounded flex flex-col justify-center items-center'>
-            Prawidłowe hasło
-            <button
-              className='bg-blue-500 rounded mt-1 text-l py-1 cursor-pointer px-2'
-              onClick={() => setShowModal(!showModal)}
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      )}
-      <PasswordInput password='dlugosc-h' onSuccess={handleSuccess} />
+      <Modal
+        color='bg-blue-500'
+        text='Prawidłowe hasło'
+        open={showModal}
+        onClose={() => setShowModal(false)}
+      />
+      <Modal
+        color='bg-red-500'
+        text='Nieprawidłowe hasło'
+        open={showFail}
+        onClose={() => setShowFail(false)}
+      />
+      <PasswordInput
+        password='dlugosc-h'
+        onSuccess={handleSuccess}
+        onFail={handleFail}
+      />
     </div>
   );
 };
